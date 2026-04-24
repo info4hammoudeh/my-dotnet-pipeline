@@ -20,4 +20,12 @@ public class CalculatorTests
         var greeting = "Hello, World!";
         Assert.Contains("Hello", greeting);
     }
+
+    // Test 3: does 2 + 3 equal 5? (should pass)
+    [Fact]
+    public void Add_TwoPlusThree_ReturnsFour()
+    {
+        var result = 2 + 3;
+        Assert.Equal(5, result);
+    }
 }
