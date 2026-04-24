@@ -1,4 +1,4 @@
-name: Build and Test
+name: Build, Test and Deploy
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
     branches: [main]
 
 jobs:
+
   build-and-test:
     runs-on: ubuntu-latest
 
@@ -27,3 +28,30 @@ jobs:
 
       - name: Run tests
         run: dotnet test --no-build --configuration Release
+
+      - name: Publish app
+        run: dotnet publish MyApp/MyApp.csproj --configuration Release --output ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-app
+          path: ./publish
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-app
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'my-dotnet-app-hammoudeh'
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: .
