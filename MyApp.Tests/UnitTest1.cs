@@ -10,7 +10,7 @@ public class CalculatorTests
     public void Add_TwoPlusTwo_ReturnsFour()
     {
         var result = 2 + 2;
-        Assert.Equal(99, result);
+        Assert.Equal(4, result);
     }
 
     // Test 2: does our string work? (should pass)
