@@ -22,12 +22,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{c6f34f0d-7ae5-4f3a-be61-fe0c21ae9eb8}"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -50,8 +46,7 @@
               "ToolTip": "C:\\Users\\hah\\Documents\\my-dotnet-pipeline\\MyApp\\MyApp.csproj",
               "RelativeToolTip": "MyApp\\MyApp.csproj",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-04-23T23:47:49.681Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-23T23:47:49.681Z"
             },
             {
               "$type": "Document",
@@ -63,8 +58,7 @@
               "RelativeToolTip": "MyApp\\MyApp.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-04-23T23:47:17.621Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-23T23:47:17.621Z"
             }
           ]
         }
