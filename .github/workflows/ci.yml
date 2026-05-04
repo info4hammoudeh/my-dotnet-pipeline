@@ -1,57 +1,98 @@
-name: Build, Test and Deploy
+name: CI/CD — QA and Production
 
 on:
   push:
-    branches: [main]
+    branches: [main]     # triggers on every merge to main
   pull_request:
-    branches: [main]
+    branches: [main]     # also runs tests on PRs (no deploy)
 
 jobs:
 
+  # ════════════════════════════════════════════════════
+  # JOB 1: Build & Test
+  # Runs on every push AND every pull request.
+  # If this fails, nothing else runs.
+  # ════════════════════════════════════════════════════
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - run: dotnet restore
+      - run: dotnet build --no-restore -c Release
+      - run: dotnet test --no-build -c Release
 
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
-
-      - name: Run tests
-        run: dotnet test --no-build --configuration Release
-
+      # Publish the app and save it as a pipeline artifact.
+      # This is the SINGLE BUILD that both QA and Prod will use.
+      # We are building ONCE and promoting the same artifact.
       - name: Publish app
-        run: dotnet publish MyApp/MyApp.csproj --configuration Release --output ./publish
+        run: dotnet publish MyApp/MyApp.csproj -c Release -o ./publish
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dotnet-app
+          name: app-build          # name we use to refer to this artifact
           path: ./publish
+          retention-days: 7      # keep for 7 days in case we need to re-deploy
 
-  deploy:
+  # ════════════════════════════════════════════════════
+  # JOB 2: Deploy to QA
+  # Runs automatically after tests pass.
+  # Only on push to main (not on pull requests).
+  # Uses the QA environment — which has QA secrets.
+  # ════════════════════════════════════════════════════
+  deploy-qa:
     runs-on: ubuntu-latest
-    needs: build-and-test
-    if: github.ref == 'refs/heads/main'
+    needs: build-and-test                    # wait for tests to pass
+    if: github.event_name == 'push'           # don't deploy on PRs
+    environment: qa                           # use QA environment secrets
 
     steps:
+      # Download the artifact built in Job 1
+      # This is the same binary that will later go to production
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: dotnet-app
+          name: app-build
 
-      - name: Deploy to Azure App Service
+      - name: Deploy to QA Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'my-dotnet-app-hammoudeh'
-          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          app-name: 'my-dotnet-app-hammoudeh'         # ← your QA app name
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE_QA }}
+          package: .
+
+  # ════════════════════════════════════════════════════
+  # JOB 3: Deploy to Production
+  # Runs ONLY after QA deploy succeeds.
+  # PAUSES and waits for a human to approve on GitHub.
+  # Uses the production environment — which has prod secrets.
+  # Deploys the EXACT SAME artifact as QA — not a new build.
+  # ════════════════════════════════════════════════════
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: deploy-qa                         # wait for QA to finish first
+    if: github.event_name == 'push'
+    environment: production                  # ← this line triggers the approval gate
+    # GitHub will pause here and email the required reviewers.
+    # The job only continues when someone clicks Approve.
+
+    steps:
+      # Download the SAME artifact from Job 1
+      # This is identical to what was deployed to QA
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+
+      - name: Deploy to Production Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'my-dotnet-app-prod'       # ← your production app name
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE_PROD }}
           package: .
